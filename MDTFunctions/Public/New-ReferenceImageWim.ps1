@@ -58,10 +58,17 @@ function New-ReferenceImageWim {
         Write-Verbose 'A temporary virtual machine was created for image capture, this will now be removed'
         Configure-VM -VMName ReferenceImage -CleanUp -Verbose
     }
-    $WimFiles = (Get-ChildItem -Path (Join-Path $RefShare.Path -ChildPath Captures\*) -Include *.wim).FullName
-    $LatestWim = ($WimFiles | sort CreationTime -Descending)[0]
+    $WimFiles = Get-ChildItem -Path (Join-Path $RefShare.Path -ChildPath Captures\*) -Include *.wim
+    $LatestWim = ($WimFiles | sort LastWriteTime -Descending)[0]
     If($CleanUp){
-        Remove-OldWimFiles -Verbose
+        Write-Verbose '-CleanUp switch was selected, old .wim files will now be removed'
+        Write-Verbose "The most recent .wim file is $($LatestWim.FullName)"
+        foreach($WimFile in $WimFiles){
+            If($WimFile -ne $LatestWim){
+                Remove-Item $WimFile -Force
+                Write-Verbose "$WimFile has been removed"
+            }
+        }
     }
     Write-Verbose "New wim file created at $WimFile"
 }
